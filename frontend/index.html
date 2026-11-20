@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Çift Altyazı - Dil Öğrenme Uygulaması</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="card" aria-labelledby="app-title">
+      <span class="badge">Faz 1 · Proje İskeleti</span>
+      <h1 id="app-title">Çift Altyazı Dil Öğrenme</h1>
+      <p class="subtitle">
+        Bilgisayarınızdaki videoları cümle cümle çevirerek çift altyazı ile
+        oynatan yerel masaüstü dil öğrenme uygulaması.
+      </p>
+
+      <div id="status-box" class="status-box status-loading" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="status-text">Sunucu bağlantısı kontrol ediliyor...</span>
+      </div>
+
+      <button id="retry-btn" class="retry-btn" type="button">
+        Bağlantıyı Yeniden Kontrol Et
+      </button>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

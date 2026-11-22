@@ -7,25 +7,110 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <main class="container">
-    <section class="card" aria-labelledby="app-title">
-      <span class="badge">Faz 1 · Proje İskeleti</span>
-      <h1 id="app-title">Çift Altyazı Dil Öğrenme</h1>
-      <p class="subtitle">
-        Bilgisayarınızdaki videoları cümle cümle çevirerek çift altyazı ile
-        oynatan yerel masaüstü dil öğrenme uygulaması.
-      </p>
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <input
+          id="video-input"
+          class="visually-hidden"
+          type="file"
+          accept="video/*"
+        />
+        <label for="video-input" class="btn-primary">
+          Video Seç
+        </label>
 
-      <div id="status-box" class="status-box status-loading" role="status" aria-live="polite">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span id="status-text">Sunucu bağlantısı kontrol ediliyor...</span>
+        <div class="file-info" title="Seçilen video">
+          <span class="file-label">Video:</span>
+          <span id="file-name" class="file-name file-name-empty">Henüz video seçilmedi</span>
+        </div>
       </div>
 
-      <button id="retry-btn" class="retry-btn" type="button">
-        Bağlantıyı Yeniden Kontrol Et
-      </button>
-    </section>
-  </main>
+      <div class="top-bar-center" aria-label="Dil seçimi">
+        <div class="lang-group">
+          <label for="source-lang" class="lang-label">Kaynak</label>
+          <select id="source-lang" class="lang-select" aria-label="Kaynak Dil">
+            <option value="en" selected>İngilizce</option>
+            <option value="tr">Türkçe</option>
+            <option value="de">Almanca</option>
+            <option value="fr">Fransızca</option>
+            <option value="es">İspanyolca</option>
+          </select>
+        </div>
+
+        <button
+          id="swap-lang-btn"
+          class="btn-swap"
+          type="button"
+          title="Dilleri Değiştir"
+          aria-label="Dilleri Değiştir"
+        >
+          ⇄
+        </button>
+
+        <div class="lang-group">
+          <label for="target-lang" class="lang-label">Hedef</label>
+          <select id="target-lang" class="lang-select" aria-label="Hedef Dil">
+            <option value="en">İngilizce</option>
+            <option value="tr" selected>Türkçe</option>
+            <option value="de">Almanca</option>
+            <option value="fr">Fransızca</option>
+            <option value="es">İspanyolca</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="top-bar-right">
+        <button
+          id="health-badge"
+          class="health-badge status-loading"
+          type="button"
+          role="status"
+          aria-live="polite"
+          title="Bağlantıyı yeniden kontrol etmek için tıklayın"
+        >
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="health-text">Kontrol ediliyor...</span>
+        </button>
+      </div>
+    </header>
+
+    <div id="lang-warning" class="lang-warning" role="alert" hidden>
+      Kaynak ve hedef dil aynı seçildi. Çift yönlü çeviri için farklı diller seçin.
+    </div>
+
+    <main class="workspace">
+      <section class="player-stage" aria-label="Video oynatıcı">
+        <video id="video-player" class="video-player" controls playsinline hidden></video>
+
+        <div id="player-placeholder" class="player-placeholder">
+          <div class="placeholder-icon" aria-hidden="true">▶</div>
+          <p class="placeholder-title">Yerel Video Oynatıcı</p>
+          <p class="placeholder-desc">
+            Bilgisayarınızdan bir video seçin; dosya sunucuya yüklenmeden anında burada oynatılır.
+          </p>
+          <label for="video-input" class="btn-secondary">
+            Bilgisayardan Video Seç
+          </label>
+        </div>
+      </section>
+
+      <section class="subtitle-box" aria-label="Çift altyazı önizleme alanı">
+        <div class="subtitle-header">
+          <span class="subtitle-tag">Çift Altyazı Alanı</span>
+          <span id="subtitle-pair" class="subtitle-pair">İngilizce → Türkçe</span>
+        </div>
+        <div class="subtitle-lines">
+          <p id="subtitle-source" class="subtitle-line subtitle-line-source">
+            Orijinal altyazı satırı burada görünecek
+          </p>
+          <p id="subtitle-target" class="subtitle-line subtitle-line-target">
+            Çevrilmiş altyazı satırı ileriki fazlarda burada senkronize gösterilecek
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script src="/app.js"></script>
 </body>

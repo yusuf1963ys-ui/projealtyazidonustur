@@ -26,7 +26,7 @@
         </div>
       </div>
 
-      <div class="top-bar-center" aria-label="Dil seçimi">
+      <div class="top-bar-center" aria-label="Dil seçimi ve altyazı işlemi">
         <div class="lang-group">
           <label for="source-lang" class="lang-label">Kaynak</label>
           <select id="source-lang" class="lang-select" aria-label="Kaynak Dil">
@@ -58,6 +58,15 @@
             <option value="es">İspanyolca</option>
           </select>
         </div>
+
+        <button
+          id="transcribe-btn"
+          class="btn-action"
+          type="button"
+          disabled
+        >
+          Altyazı Oluştur
+        </button>
       </div>
 
       <div class="top-bar-right">
@@ -75,8 +84,13 @@
       </div>
     </header>
 
-    <div id="lang-warning" class="lang-warning" role="alert" hidden>
+    <div id="lang-warning" class="banner banner-warning" role="alert" hidden>
       Kaynak ve hedef dil aynı seçildi. Çift yönlü çeviri için farklı diller seçin.
+    </div>
+
+    <div id="transcribe-status" class="banner" role="status" aria-live="polite" hidden>
+      <span id="transcribe-spinner" class="spinner" aria-hidden="true" hidden></span>
+      <span id="transcribe-status-text"></span>
     </div>
 
     <main class="workspace">
@@ -87,7 +101,7 @@
           <div class="placeholder-icon" aria-hidden="true">▶</div>
           <p class="placeholder-title">Yerel Video Oynatıcı</p>
           <p class="placeholder-desc">
-            Bilgisayarınızdan bir video seçin; dosya sunucuya yüklenmeden anında burada oynatılır.
+            Bilgisayarınızdan bir video seçin; anında oynatın ve "Altyazı Oluştur" ile orijinal altyazıyı çıkarın.
           </p>
           <label for="video-input" class="btn-secondary">
             Bilgisayardan Video Seç
@@ -101,11 +115,11 @@
           <span id="subtitle-pair" class="subtitle-pair">İngilizce → Türkçe</span>
         </div>
         <div class="subtitle-lines">
-          <p id="subtitle-source" class="subtitle-line subtitle-line-source">
-            Orijinal altyazı satırı burada görünecek
+          <p id="subtitle-source" class="subtitle-line subtitle-line-source subtitle-placeholder">
+            Altyazı oluşturulduğunda aktif cümle burada görünecek
           </p>
           <p id="subtitle-target" class="subtitle-line subtitle-line-target">
-            Çevrilmiş altyazı satırı ileriki fazlarda burada senkronize gösterilecek
+            Çeviri Faz 4'te eklenecek
           </p>
         </div>
       </section>

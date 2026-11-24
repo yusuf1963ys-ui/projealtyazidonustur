@@ -1,3 +1,5 @@
 fastapi
 uvicorn
 pywebview
+faster-whisper
+python-multipart

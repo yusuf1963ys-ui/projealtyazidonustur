@@ -6,13 +6,25 @@ const playerPlaceholder = document.getElementById("player-placeholder");
 const sourceLangSelect = document.getElementById("source-lang");
 const targetLangSelect = document.getElementById("target-lang");
 const swapLangBtn = document.getElementById("swap-lang-btn");
+const transcribeBtn = document.getElementById("transcribe-btn");
 const langWarningEl = document.getElementById("lang-warning");
+
+const transcribeStatusEl = document.getElementById("transcribe-status");
+const transcribeSpinnerEl = document.getElementById("transcribe-spinner");
+const transcribeStatusTextEl = document.getElementById("transcribe-status-text");
+
 const subtitlePairEl = document.getElementById("subtitle-pair");
+const subtitleSourceEl = document.getElementById("subtitle-source");
+const subtitleTargetEl = document.getElementById("subtitle-target");
 
 const healthBadge = document.getElementById("health-badge");
 const healthText = document.getElementById("health-text");
 
 let currentVideoUrl = null;
+let selectedFile = null;
+let subtitleSegments = [];
+let lastRenderedIndex = -2;
+let isTranscribing = false;
 
 function setHealthState(state, message) {
   healthBadge.className = `health-badge status-${state}`;
@@ -39,6 +51,30 @@ async function checkHealth() {
   }
 }
 
+function setTranscribeStatus(type, message, showSpinner = false) {
+  if (!type) {
+    transcribeStatusEl.hidden = true;
+    transcribeSpinnerEl.hidden = true;
+    transcribeStatusTextEl.textContent = "";
+    return;
+  }
+
+  transcribeStatusEl.className = `banner banner-${type}`;
+  transcribeStatusTextEl.textContent = message;
+  transcribeSpinnerEl.hidden = !showSpinner;
+  transcribeStatusEl.hidden = false;
+}
+
+function setControlsBusy(busy) {
+  isTranscribing = busy;
+  transcribeBtn.disabled = busy || !selectedFile;
+  transcribeBtn.textContent = busy ? "İşleniyor..." : "Altyazı Oluştur";
+  sourceLangSelect.disabled = busy;
+  targetLangSelect.disabled = busy;
+  swapLangBtn.disabled = busy;
+  videoInput.disabled = busy;
+}
+
 function getSelectedLabel(selectEl) {
   const option = selectEl.options[selectEl.selectedIndex];
   return option ? option.textContent : selectEl.value;
@@ -54,10 +90,50 @@ function updateLanguageState() {
 }
 
 function handleSwapLanguages() {
+  if (isTranscribing) {
+    return;
+  }
   const previousSource = sourceLangSelect.value;
   sourceLangSelect.value = targetLangSelect.value;
   targetLangSelect.value = previousSource;
   updateLanguageState();
+}
+
+function resetSubtitles(placeholderMessage) {
+  subtitleSegments = [];
+  lastRenderedIndex = -2;
+  subtitleSourceEl.textContent = placeholderMessage;
+  subtitleSourceEl.classList.add("subtitle-placeholder");
+  subtitleTargetEl.textContent = "Çeviri Faz 4'te eklenecek";
+}
+
+function findActiveSegmentIndex(currentTime) {
+  for (let i = 0; i < subtitleSegments.length; i += 1) {
+    const seg = subtitleSegments[i];
+    if (currentTime >= seg.start && currentTime <= seg.end) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function updateActiveSubtitle() {
+  if (subtitleSegments.length === 0) {
+    return;
+  }
+
+  const activeIndex = findActiveSegmentIndex(videoPlayer.currentTime);
+  if (activeIndex === lastRenderedIndex) {
+    return;
+  }
+  lastRenderedIndex = activeIndex;
+
+  subtitleSourceEl.classList.remove("subtitle-placeholder");
+  if (activeIndex >= 0) {
+    subtitleSourceEl.textContent = subtitleSegments[activeIndex].text;
+  } else {
+    subtitleSourceEl.textContent = "";
+  }
 }
 
 function handleVideoSelect(event) {
@@ -70,6 +146,7 @@ function handleVideoSelect(event) {
     URL.revokeObjectURL(currentVideoUrl);
   }
 
+  selectedFile = file;
   currentVideoUrl = URL.createObjectURL(file);
   videoPlayer.src = currentVideoUrl;
   videoPlayer.hidden = false;
@@ -79,12 +156,82 @@ function handleVideoSelect(event) {
   fileNameEl.textContent = file.name;
   fileNameEl.classList.remove("file-name-empty");
   fileNameEl.title = file.name;
+
+  transcribeBtn.disabled = false;
+  setTranscribeStatus(null, "");
+  resetSubtitles('Altyazı çıkarmak için "Altyazı Oluştur" butonuna basın');
+}
+
+async function handleTranscribe() {
+  if (!selectedFile || isTranscribing) {
+    return;
+  }
+
+  setControlsBusy(true);
+  setTranscribeStatus(
+    "info",
+    "Ses ayrıştırılıyor ve altyazı çıkarılıyor...",
+    true
+  );
+
+  try {
+    const formData = new FormData();
+    formData.append("video", selectedFile);
+    formData.append("source_lang", sourceLangSelect.value);
+
+    const response = await fetch("/api/transcribe", {
+      method: "POST",
+      body: formData,
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (parseErr) {
+      data = null;
+    }
+
+    if (!response.ok) {
+      const errorMessage =
+        (data && data.detail) ||
+        `Altyazı oluşturulamadı (HTTP ${response.status}).`;
+      throw new Error(errorMessage);
+    }
+
+    const receivedSegments = Array.isArray(data && data.segments)
+      ? data.segments
+      : [];
+
+    subtitleSegments = receivedSegments;
+    lastRenderedIndex = -2;
+
+    if (subtitleSegments.length > 0) {
+      setTranscribeStatus(
+        "ok",
+        `Altyazı hazır (${subtitleSegments.length} cümle/segment bulundu).`
+      );
+      updateActiveSubtitle();
+    } else {
+      resetSubtitles("Videoda konuşma tespit edilemedi.");
+      setTranscribeStatus("warning", "Videoda konuşma tespit edilemedi.");
+    }
+  } catch (error) {
+    setTranscribeStatus(
+      "error",
+      error.message || "Altyazı çıkarılırken bir hata oluştu."
+    );
+  } finally {
+    setControlsBusy(false);
+  }
 }
 
 videoInput.addEventListener("change", handleVideoSelect);
 sourceLangSelect.addEventListener("change", updateLanguageState);
 targetLangSelect.addEventListener("change", updateLanguageState);
 swapLangBtn.addEventListener("click", handleSwapLanguages);
+transcribeBtn.addEventListener("click", handleTranscribe);
+videoPlayer.addEventListener("timeupdate", updateActiveSubtitle);
+videoPlayer.addEventListener("seeked", updateActiveSubtitle);
 healthBadge.addEventListener("click", checkHealth);
 
 window.addEventListener("beforeunload", () => {

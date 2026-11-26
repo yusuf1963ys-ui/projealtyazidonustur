@@ -1,5 +1,6 @@
 """faster-whisper ile WAV ses dosyasından zaman damgalı altyazı üretme modülü."""
 
+import gc
 from pathlib import Path
 import threading
 from typing import Any
@@ -41,12 +42,15 @@ def _get_model(model_size: str = DEFAULT_MODEL_SIZE) -> WhisperModel:
             return _model_cache[cache_key]
 
         try:
-            model = WhisperModel(
-                model_size,
-                device=device,
-                compute_type=compute_type,
-                download_root=str(MODELS_DIR),
-            )
+            model_kwargs: dict[str, Any] = {
+                "device": device,
+                "compute_type": compute_type,
+                "download_root": str(MODELS_DIR),
+            }
+            if device == "cpu":
+                model_kwargs["cpu_threads"] = 2
+
+            model = WhisperModel(model_size, **model_kwargs)
             _model_cache[cache_key] = model
             return model
         except Exception as exc:
@@ -60,6 +64,7 @@ def _get_model(model_size: str = DEFAULT_MODEL_SIZE) -> WhisperModel:
                         model_size,
                         device="cpu",
                         compute_type="int8",
+                        cpu_threads=2,
                         download_root=str(MODELS_DIR),
                     )
                     _model_cache[fallback_key] = model
@@ -70,6 +75,20 @@ def _get_model(model_size: str = DEFAULT_MODEL_SIZE) -> WhisperModel:
                     ) from fallback_exc
 
             raise TranscriptionError(f"Whisper modeli yüklenemedi: {exc}") from exc
+
+
+def release_models() -> None:
+    """Önbellekteki Whisper modellerini bellekten boşaltır (çeviri öncesi RAM açar)."""
+    with _model_lock:
+        for model in _model_cache.values():
+            inner = getattr(model, "model", None)
+            if inner is not None and hasattr(inner, "unload_model"):
+                try:
+                    inner.unload_model()
+                except Exception:
+                    pass
+        _model_cache.clear()
+    gc.collect()
 
 
 def transcribe_audio(

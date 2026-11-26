@@ -1,8 +1,19 @@
-"""Yerel PC Dil Öğrenme Uygulaması - Masaüstü Başlatıcı (Faz 1)."""
+"""Yerel PC Dil Öğrenme Uygulaması - Masaüstü Başlatıcı."""
 
+import os
 import socket
 import threading
 import time
+
+# 8 GB gibi sınırlı RAM'e sahip sistemlerde Intel MKL bellek taşmasını önle
+os.environ.setdefault("MKL_NUM_THREADS", "2")
+os.environ.setdefault("OMP_NUM_THREADS", "2")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "2")
+os.environ.setdefault("ARGOS_COMPUTE_TYPE", "int8")
+os.environ.setdefault("ARGOS_INTRA_THREADS", "2")
+os.environ.setdefault("ARGOS_INTER_THREADS", "1")
+os.environ.setdefault("ARGOS_BATCH_SIZE", "8")
+os.environ.setdefault("ARGOS_BEAM_SIZE", "2")
 
 import uvicorn
 import webview

@@ -84,6 +84,10 @@ function updateLanguageState() {
   const isSame = sourceLangSelect.value === targetLangSelect.value;
   langWarningEl.hidden = !isSame;
 
+  if (!isSame && transcribeStatusEl.classList.contains("banner-warning")) {
+    setTranscribeStatus(null, "");
+  }
+
   const sourceLabel = getSelectedLabel(sourceLangSelect);
   const targetLabel = getSelectedLabel(targetLangSelect);
   subtitlePairEl.textContent = `${sourceLabel} → ${targetLabel}`;
@@ -99,12 +103,16 @@ function handleSwapLanguages() {
   updateLanguageState();
 }
 
-function resetSubtitles(placeholderMessage) {
+function resetSubtitles(
+  sourceMessage,
+  targetMessage = "Çeviri satırı burada görünecek"
+) {
   subtitleSegments = [];
   lastRenderedIndex = -2;
-  subtitleSourceEl.textContent = placeholderMessage;
+  subtitleSourceEl.textContent = sourceMessage;
   subtitleSourceEl.classList.add("subtitle-placeholder");
-  subtitleTargetEl.textContent = "Çeviri Faz 4'te eklenecek";
+  subtitleTargetEl.textContent = targetMessage;
+  subtitleTargetEl.classList.add("subtitle-placeholder");
 }
 
 function findActiveSegmentIndex(currentTime) {
@@ -129,10 +137,15 @@ function updateActiveSubtitle() {
   lastRenderedIndex = activeIndex;
 
   subtitleSourceEl.classList.remove("subtitle-placeholder");
+  subtitleTargetEl.classList.remove("subtitle-placeholder");
+
   if (activeIndex >= 0) {
-    subtitleSourceEl.textContent = subtitleSegments[activeIndex].text;
+    const activeSegment = subtitleSegments[activeIndex];
+    subtitleSourceEl.textContent = activeSegment.text || "";
+    subtitleTargetEl.textContent = activeSegment.translation || "";
   } else {
     subtitleSourceEl.textContent = "";
+    subtitleTargetEl.textContent = "";
   }
 }
 
@@ -159,7 +172,10 @@ function handleVideoSelect(event) {
 
   transcribeBtn.disabled = false;
   setTranscribeStatus(null, "");
-  resetSubtitles('Altyazı çıkarmak için "Altyazı Oluştur" butonuna basın');
+  resetSubtitles(
+    'Çift altyazı çıkarmak için "Altyazı Oluştur" butonuna basın',
+    "Çeviri satırı burada görünecek"
+  );
 }
 
 async function handleTranscribe() {
@@ -167,10 +183,19 @@ async function handleTranscribe() {
     return;
   }
 
+  if (sourceLangSelect.value === targetLangSelect.value) {
+    langWarningEl.hidden = false;
+    setTranscribeStatus(
+      "warning",
+      "Kaynak ve hedef dil aynı olamaz. İşlemi başlatmadan önce farklı diller seçin."
+    );
+    return;
+  }
+
   setControlsBusy(true);
   setTranscribeStatus(
     "info",
-    "Ses ayrıştırılıyor ve altyazı çıkarılıyor...",
+    "Ses ayrıştırılıyor, altyazı çıkarılıyor ve çevriliyor...",
     true
   );
 
@@ -178,6 +203,7 @@ async function handleTranscribe() {
     const formData = new FormData();
     formData.append("video", selectedFile);
     formData.append("source_lang", sourceLangSelect.value);
+    formData.append("target_lang", targetLangSelect.value);
 
     const response = await fetch("/api/transcribe", {
       method: "POST",
@@ -194,7 +220,7 @@ async function handleTranscribe() {
     if (!response.ok) {
       const errorMessage =
         (data && data.detail) ||
-        `Altyazı oluşturulamadı (HTTP ${response.status}).`;
+        `Altyazı ve çeviri oluşturulamadı (HTTP ${response.status}).`;
       throw new Error(errorMessage);
     }
 
@@ -208,17 +234,17 @@ async function handleTranscribe() {
     if (subtitleSegments.length > 0) {
       setTranscribeStatus(
         "ok",
-        `Altyazı hazır (${subtitleSegments.length} cümle/segment bulundu).`
+        `Çift altyazı hazır (${subtitleSegments.length} cümle/segment).`
       );
       updateActiveSubtitle();
     } else {
-      resetSubtitles("Videoda konuşma tespit edilemedi.");
+      resetSubtitles("Videoda konuşma tespit edilemedi.", "");
       setTranscribeStatus("warning", "Videoda konuşma tespit edilemedi.");
     }
   } catch (error) {
     setTranscribeStatus(
       "error",
-      error.message || "Altyazı çıkarılırken bir hata oluştu."
+      error.message || "Altyazı ve çeviri çıkarılırken bir hata oluştu."
     );
   } finally {
     setControlsBusy(false);

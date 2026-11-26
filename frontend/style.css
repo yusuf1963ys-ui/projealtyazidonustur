@@ -479,30 +479,33 @@ body {
   justify-content: center;
   gap: 6px;
   text-align: center;
-  min-height: 60px;
+  min-height: 68px;
 }
 
 .subtitle-line {
   max-width: 100%;
   word-break: break-word;
+  line-height: 1.4;
 }
 
 .subtitle-line-source {
-  font-size: 1.08rem;
+  font-size: 1.16rem;
   font-weight: 600;
   color: var(--text);
   min-height: 1.5em;
 }
 
-.subtitle-placeholder {
-  color: var(--muted);
+.subtitle-line-target {
+  font-size: 0.98rem;
   font-weight: 500;
-  font-size: 0.96rem;
+  color: #cbd5e1;
+  min-height: 1.4em;
 }
 
-.subtitle-line-target {
-  font-size: 0.88rem;
+.subtitle-placeholder {
   color: var(--muted);
+  font-weight: 400;
+  font-size: 0.92rem;
 }
 
 @media (max-width: 1020px) {

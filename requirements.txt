@@ -3,3 +3,4 @@ uvicorn
 pywebview
 faster-whisper
 python-multipart
+argostranslate
